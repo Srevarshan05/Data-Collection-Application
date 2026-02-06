@@ -148,10 +148,13 @@ async def register_student(
     section: str = Form(...),
     last_digits: str = Form(...),
     photo: UploadFile = File(...),
+    signature: UploadFile = File(...),
+    has_ipad: str = Form(...),
+    ipad_mac_address: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
-    Register a new student
+    Register a new student with photo, signature, and iPad information
     """
     try:
         # Validate year and section
@@ -187,28 +190,58 @@ async def register_student(
                 detail=f"Registration number {register_number} already exists. Please use different last 3 digits."
             )
         
-        # Validate file extension
+        # Validate photo file
         if not validate_file_extension(photo.filename):
             raise HTTPException(
                 status_code=400,
-                detail="Invalid file format. Only JPG and PNG files are allowed."
+                detail="Invalid photo format. Only JPG and PNG files are allowed."
             )
         
-        # Validate file size
-        file_size = get_file_size(photo.file)
-        if not validate_file_size(file_size):
+        photo_size = get_file_size(photo.file)
+        if not validate_file_size(photo_size):
             raise HTTPException(
                 status_code=400,
-                detail="File size exceeds 500KB limit. Please upload a smaller image."
+                detail="Photo size exceeds 500KB limit. Please upload a smaller image."
             )
         
-        # Process and save image
+        # Validate signature file
+        if not validate_file_extension(signature.filename):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid signature format. Only JPG and PNG files are allowed."
+            )
+        
+        signature_size = get_file_size(signature.file)
+        if not validate_file_size(signature_size):
+            raise HTTPException(
+                status_code=400,
+                detail="Signature size exceeds 500KB limit. Please upload a smaller image."
+            )
+        
+        # Validate iPad MAC address if iPad is selected
+        if has_ipad == 'Yes' and not ipad_mac_address:
+            raise HTTPException(
+                status_code=400,
+                detail="iPad MAC address is required when iPad is selected"
+            )
+        
+        # Process and save photo
         try:
             photo_path = process_and_save_image(photo.file, year, section, register_number)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Error processing image: {str(e)}"
+                detail=f"Error processing photo: {str(e)}"
+            )
+        
+        # Process and save signature
+        try:
+            from app.utils import process_and_save_signature
+            signature_path = process_and_save_signature(signature.file, year, section, register_number)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error processing signature: {str(e)}"
             )
         
         # Create new student record
@@ -217,7 +250,10 @@ async def register_student(
             year=year,
             section=section.upper(),
             register_number=register_number,
-            photo_path=photo_path
+            photo_path=photo_path,
+            signature_path=signature_path,
+            has_ipad=has_ipad,
+            ipad_mac_address=ipad_mac_address.upper() if ipad_mac_address else None
         )
         
         # Save to database

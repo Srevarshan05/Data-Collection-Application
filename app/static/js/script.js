@@ -45,7 +45,24 @@ const cameraCanvas = document.getElementById('cameraCanvas');
 const captureBtn = document.getElementById('captureBtn');
 const closeCameraBtn = document.getElementById('closeCameraBtn');
 
+// iPad elements
+const ipadYes = document.getElementById('ipadYes');
+const ipadNo = document.getElementById('ipadNo');
+const macAddressField = document.getElementById('macAddressField');
+const ipadMacAddress = document.getElementById('ipadMacAddress');
+
+// Signature elements
+const signatureInput = document.getElementById('signatureInput');
+const signatureUploadArea = document.getElementById('signatureUploadArea');
+const signatureUploadContent = document.getElementById('signatureUploadContent');
+const signaturePreviewArea = document.getElementById('signaturePreviewArea');
+const signaturePreview = document.getElementById('signaturePreview');
+const signatureFileName = document.getElementById('signatureFileName');
+const signatureFileSize = document.getElementById('signatureFileSize');
+const removeSignatureBtn = document.getElementById('removeSignature');
+
 let selectedFile = null;
+let selectedSignature = null;
 let cameraStream = null;
 
 // ===================================
@@ -374,6 +391,231 @@ function compressImage(canvas, callback) {
 }
 
 // ===================================
+// iPad Toggle Handler
+// ===================================
+ipadYes.addEventListener('change', function() {
+    if (this.checked) {
+        macAddressField.classList.remove('d-none');
+        ipadMacAddress.required = true;
+    }
+});
+
+ipadNo.addEventListener('change', function() {
+    if (this.checked) {
+        macAddressField.classList.add('d-none');
+        ipadMacAddress.required = false;
+        ipadMacAddress.value = '';
+        ipadMacAddress.classList.remove('is-valid', 'is-invalid');
+    }
+});
+
+// MAC Address formatting
+ipadMacAddress.addEventListener('input', function() {
+    // Remove all non-hex characters
+    let value = this.value.replace(/[^0-9A-Fa-f]/g, '');
+    
+    // Add colons every 2 characters
+    let formatted = '';
+    for (let i = 0; i < value.length && i < 12; i++) {
+        if (i > 0 && i % 2 === 0) {
+            formatted += ':';
+        }
+        formatted += value[i];
+    }
+    
+    this.value = formatted.toUpperCase();
+});
+
+// ===================================
+// Signature Upload Handlers
+// ===================================
+signatureInput.addEventListener('change', handleSignatureSelect);
+
+function handleSignatureSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        handleSignatureFile(file);
+    }
+}
+
+function handleSignatureFile(file) {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+        showToast('error', 'Invalid signature file type! Please upload JPG or PNG image.');
+        return;
+    }
+    
+    // Validate file size (500KB)
+    const maxSize = 500 * 1024;
+    if (file.size > maxSize) {
+        showToast('error', `Signature file size exceeds 500KB! Current size: ${formatFileSize(file.size)}`);
+        return;
+    }
+    
+    // Store file
+    selectedSignature = file;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        signaturePreview.src = e.target.result;
+        signatureFileName.textContent = file.name;
+        signatureFileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+        
+        // Show preview area, hide upload content
+        signatureUploadContent.classList.add('d-none');
+        signaturePreviewArea.classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Remove signature
+removeSignatureBtn.addEventListener('click', () => {
+    selectedSignature = null;
+    signatureInput.value = '';
+    signaturePreview.src = '';
+    signatureFileName.textContent = '';
+    signatureFileSize.textContent = '';
+    
+    // Show upload content, hide preview area
+    signatureUploadContent.classList.remove('d-none');
+    signaturePreviewArea.classList.add('d-none');
+});
+
+// ===================================
+// Signature Camera Capture Functionality
+// ===================================
+const signatureCameraBtn = document.getElementById('signatureCameraBtn');
+const signatureCameraArea = document.getElementById('signatureCameraArea');
+const signatureCameraVideo = document.getElementById('signatureCameraVideo');
+const signatureCameraCanvas = document.getElementById('signatureCameraCanvas');
+const signatureCaptureBtn = document.getElementById('signatureCaptureBtn');
+const closeSignatureCameraBtn = document.getElementById('closeSignatureCameraBtn');
+
+let signatureCameraStream = null;
+
+// Open signature camera
+signatureCameraBtn.addEventListener('click', async () => {
+    try {
+        // Request camera access
+        signatureCameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        });
+        
+        // Set video source
+        signatureCameraVideo.srcObject = signatureCameraStream;
+        
+        // Show camera area, hide upload content
+        signatureUploadContent.classList.add('d-none');
+        signatureCameraArea.classList.remove('d-none');
+        
+        showToast('info', 'Camera ready! Position your signature and click "Capture Signature"');
+    } catch (error) {
+        console.error('Error accessing camera for signature:', error);
+        
+        let errorMessage = 'Unable to access camera. ';
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow camera access in your browser settings.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera found on this device.';
+        } else {
+            errorMessage += 'Please check your camera permissions.';
+        }
+        
+        showToast('error', errorMessage);
+    }
+});
+
+// Capture signature
+signatureCaptureBtn.addEventListener('click', () => {
+    // Set canvas size to match video
+    signatureCameraCanvas.width = signatureCameraVideo.videoWidth;
+    signatureCameraCanvas.height = signatureCameraVideo.videoHeight;
+    
+    // Draw video frame to canvas
+    const context = signatureCameraCanvas.getContext('2d');
+    context.drawImage(signatureCameraVideo, 0, 0);
+    
+    // Convert canvas to blob
+    signatureCameraCanvas.toBlob((blob) => {
+        // Create file from blob
+        const timestamp = new Date().getTime();
+        const file = new File([blob], `signature_capture_${timestamp}.jpg`, { 
+            type: 'image/jpeg' 
+        });
+        
+        // Validate file size
+        const maxSize = 500 * 1024; // 500KB
+        if (file.size > maxSize) {
+            showToast('warning', 'Captured signature is too large. Compressing...');
+            
+            // Compress image
+            compressImage(signatureCameraCanvas, (compressedBlob) => {
+                const compressedFile = new File([compressedBlob], `signature_capture_${timestamp}.jpg`, { 
+                    type: 'image/jpeg' 
+                });
+                
+                if (compressedFile.size > maxSize) {
+                    showToast('error', 'Unable to compress signature below 500KB. Please try again.');
+                    return;
+                }
+                
+                processSignatureCapture(compressedFile);
+            });
+        } else {
+            processSignatureCapture(file);
+        }
+    }, 'image/jpeg', 0.9);
+});
+
+// Process captured signature
+function processSignatureCapture(file) {
+    // Store file
+    selectedSignature = file;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        signaturePreview.src = e.target.result;
+        signatureFileName.textContent = file.name;
+        signatureFileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+        
+        // Hide camera area, show preview
+        signatureCameraArea.classList.add('d-none');
+        signaturePreviewArea.classList.remove('d-none');
+        
+        // Stop signature camera
+        stopSignatureCamera();
+        
+        showToast('success', 'Signature captured successfully!');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Close signature camera
+closeSignatureCameraBtn.addEventListener('click', () => {
+    stopSignatureCamera();
+    
+    // Show upload content, hide camera area
+    signatureCameraArea.classList.add('d-none');
+    signatureUploadContent.classList.remove('d-none');
+});
+
+// Stop signature camera stream
+function stopSignatureCamera() {
+    if (signatureCameraStream) {
+        signatureCameraStream.getTracks().forEach(track => track.stop());
+        signatureCameraStream = null;
+        signatureCameraVideo.srcObject = null;
+    }
+}
+
+// ===================================
 // Form Submission
 // ===================================
 registrationForm.addEventListener('submit', async (e) => {
@@ -392,6 +634,19 @@ registrationForm.addEventListener('submit', async (e) => {
         return;
     }
     
+    // Check if signature is uploaded
+    if (!selectedSignature) {
+        showToast('error', 'Please upload your signature!');
+        return;
+    }
+    
+    // Check iPad MAC address if iPad is selected
+    const hasIpad = document.querySelector('input[name="has_ipad"]:checked').value;
+    if (hasIpad === 'Yes' && !ipadMacAddress.value) {
+        showToast('error', 'Please enter iPad MAC address!');
+        return;
+    }
+    
     // Prepare form data
     const formData = new FormData();
     formData.append('name', document.getElementById('studentName').value.trim());
@@ -399,6 +654,11 @@ registrationForm.addEventListener('submit', async (e) => {
     formData.append('section', sectionSelect.value);
     formData.append('last_digits', regNumberInput.value);
     formData.append('photo', selectedFile);
+    formData.append('signature', selectedSignature);
+    formData.append('has_ipad', hasIpad);
+    if (hasIpad === 'Yes') {
+        formData.append('ipad_mac_address', ipadMacAddress.value);
+    }
     
     // Show loading modal
     const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
@@ -452,19 +712,36 @@ resetBtn.addEventListener('click', () => {
         sectionSelect.innerHTML = '<option value="" selected disabled>Select Section</option>';
         regNumberInput.disabled = true;
         
-        // Stop camera if active
+        // Stop cameras if active
         stopCamera();
+        stopSignatureCamera();
         
         // Reset image
         if (selectedFile) {
             removeImageBtn.click();
         }
         
-        // Hide camera area if visible
+        // Reset signature
+        if (selectedSignature) {
+            removeSignatureBtn.click();
+        }
+        
+        // Hide camera areas if visible
         if (!cameraArea.classList.contains('d-none')) {
             cameraArea.classList.add('d-none');
             uploadContent.classList.remove('d-none');
         }
+        
+        if (!signatureCameraArea.classList.contains('d-none')) {
+            signatureCameraArea.classList.add('d-none');
+            signatureUploadContent.classList.remove('d-none');
+        }
+        
+        // Reset iPad fields
+        ipadNo.checked = true;
+        macAddressField.classList.add('d-none');
+        ipadMacAddress.value = '';
+        ipadMacAddress.required = false;
         
         // Reset validation classes
         document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {

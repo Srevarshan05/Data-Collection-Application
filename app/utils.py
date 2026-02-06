@@ -119,6 +119,39 @@ def process_and_save_image(image_file, year: int, section: str, register_number:
     return filepath
 
 
+def process_and_save_signature(signature_file, year: int, section: str, register_number: str) -> str:
+    """
+    Process signature image: resize, compress, and save
+    Returns the saved file path
+    """
+    # Create directory
+    upload_dir = create_upload_directory(year, section)
+    
+    # Generate filename
+    filename = f"{register_number}_signature.jpg"
+    filepath = os.path.join(upload_dir, filename)
+    
+    # Open and process image
+    img = Image.open(signature_file)
+    
+    # Convert to RGB if necessary (for PNG with transparency)
+    if img.mode in ('RGBA', 'LA', 'P'):
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        if img.mode == 'P':
+            img = img.convert('RGBA')
+        background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+        img = background
+    
+    # Resize signature to 200x100 (signature size)
+    signature_size = (200, 100)
+    img = img.resize(signature_size, Image.Resampling.LANCZOS)
+    
+    # Save with compression
+    img.save(filepath, 'JPEG', quality=IMAGE_QUALITY, optimize=True)
+    
+    return filepath
+
+
 def get_file_size(file) -> int:
     """
     Get file size in bytes
@@ -240,8 +273,8 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
     ws = wb.active
     ws.title = "Student Records"
     
-    # Define headers
-    headers = ['Photo', 'Name', 'Year', 'Section', 'Register Number', 'Registration Date']
+    # Define headers with new columns
+    headers = ['Photo', 'Name', 'Year', 'Section', 'Register Number', 'Has iPad', 'iPad MAC Address', 'Signature', 'Registration Date']
     
     # Style for headers
     header_fill = PatternFill(start_color="0066CC", end_color="0066CC", fill_type="solid")
@@ -271,7 +304,10 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
     ws.column_dimensions['C'].width = 10  # Year
     ws.column_dimensions['D'].width = 10  # Section
     ws.column_dimensions['E'].width = 20  # Register Number
-    ws.column_dimensions['F'].width = 20  # Registration Date
+    ws.column_dimensions['F'].width = 12  # Has iPad
+    ws.column_dimensions['G'].width = 20  # iPad MAC Address
+    ws.column_dimensions['H'].width = 25  # Signature column
+    ws.column_dimensions['I'].width = 20  # Registration Date
     
     # Set row height for header
     ws.row_dimensions[1].height = 25
@@ -346,8 +382,54 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
         cell.alignment = Alignment(vertical="center")
         cell.border = thin_border
         
-        # Registration Date
+        # Has iPad
         cell = ws.cell(row=idx, column=6)
+        cell.value = student.get('has_ipad', 'No')
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+        
+        # iPad MAC Address
+        cell = ws.cell(row=idx, column=7)
+        cell.value = student.get('ipad_mac_address', 'N/A')
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+        
+        # Add signature if exists
+        signature_path = student.get('signature_path', '')
+        if signature_path and os.path.exists(signature_path):
+            try:
+                # Open and resize signature for Excel
+                sig_img = Image.open(signature_path)
+                
+                # Resize signature to fit in cell (150x75 pixels)
+                sig_resized = sig_img.resize((150, 75), Image.Resampling.LANCZOS)
+                
+                # Save temporary resized signature
+                temp_sig_filename = f"sig_{idx}.jpg"
+                temp_sig_path = os.path.join(temp_dir, temp_sig_filename)
+                sig_resized.save(temp_sig_path, 'JPEG', quality=85)
+                
+                # Add signature to Excel
+                xl_sig = XLImage(temp_sig_path)
+                xl_sig.width = 150
+                xl_sig.height = 75
+                
+                # Position signature in cell H (Signature column)
+                cell_ref = f'H{idx}'
+                ws.add_image(xl_sig, cell_ref)
+                    
+            except Exception as e:
+                # If signature fails, write error message
+                cell = ws.cell(row=idx, column=8)
+                cell.value = "Signature Error"
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+        else:
+            cell = ws.cell(row=idx, column=8)
+            cell.value = "No Signature"
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Registration Date
+        cell = ws.cell(row=idx, column=9)
         created_at = student.get('created_at', '')
         if created_at:
             if isinstance(created_at, str):

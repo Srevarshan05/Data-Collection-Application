@@ -116,6 +116,57 @@
                                             <small class="text-muted">Enter last 3 digits only</small>
                                         </div>
 
+                                        <!-- iPad Ownership -->
+                                        <div class="mb-4">
+                                            <label class="form-label fw-semibold">
+                                                Do you have an iPad? <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="d-flex gap-3">
+                                                <div class="form-check">
+                                                    <input 
+                                                        class="form-check-input" 
+                                                        type="radio" 
+                                                        name="has_ipad" 
+                                                        id="ipadNo" 
+                                                        value="No"
+                                                        checked
+                                                    >
+                                                    <label class="form-check-label" for="ipadNo">
+                                                        No
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input 
+                                                        class="form-check-input" 
+                                                        type="radio" 
+                                                        name="has_ipad" 
+                                                        id="ipadYes" 
+                                                        value="Yes"
+                                                    >
+                                                    <label class="form-check-label" for="ipadYes">
+                                                        Yes
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- iPad MAC Address (shown only if Yes) -->
+                                        <div class="mb-4 d-none" id="macAddressField">
+                                            <label for="ipadMacAddress" class="form-label fw-semibold">
+                                                iPad MAC Address <span class="text-danger">*</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                class="form-control form-control-lg rounded-pill" 
+                                                id="ipadMacAddress" 
+                                                name="ipad_mac_address"
+                                                placeholder="Enter MAC Address (e.g., AA:BB:CC:DD:EE:FF)"
+                                                pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                                            >
+                                            <small class="text-muted">Format: XX:XX:XX:XX:XX:XX</small>
+                                            <div class="invalid-feedback">Please enter a valid MAC address</div>
+                                        </div>
+
                                         <!-- Hidden field for full registration number -->
                                         <input type="hidden" id="fullRegNumber" name="full_register_number">
                                     </form>
@@ -123,9 +174,10 @@
                             </div>
                         </div>
 
-                        <!-- Right Side - Photo Upload -->
+                        <!-- Right Side - Photo & Signature Upload -->
                         <div class="col-lg-5">
-                            <div class="card shadow-sm border-0 rounded-3">
+                            <!-- Photo Upload Card -->
+                            <div class="card shadow-sm border-0 rounded-3 mb-4">
                                 <div class="card-body p-4">
                                     <h4 class="card-title mb-4 text-primary">
                                         <i class="fas fa-camera me-2"></i>Photo Upload
@@ -189,6 +241,71 @@
                                                     <i class="fas fa-camera me-2"></i>Retake
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Signature Upload Card -->
+                            <div class="card shadow-sm border-0 rounded-3">
+                                <div class="card-body p-4">
+                                    <h4 class="card-title mb-4 text-primary">
+                                        <i class="fas fa-signature me-2"></i>Signature Upload
+                                    </h4>
+                                    
+                                    <!-- Signature Upload Area -->
+                                    <div class="upload-area" id="signatureUploadArea">
+                                        <div class="upload-content" id="signatureUploadContent">
+                                            <i class="fas fa-file-signature fa-3x text-primary mb-3"></i>
+                                            <h5 class="mb-2">Upload Signature</h5>
+                                            <p class="text-muted mb-3">or choose an option below</p>
+                                            
+                                            <!-- Upload and Camera Buttons for Signature -->
+                                            <div class="d-flex gap-2 justify-content-center mb-3">
+                                                <label for="signatureInput" class="btn btn-outline-primary btn-lg rounded-pill">
+                                                    <i class="fas fa-folder-open me-2"></i>Browse Files
+                                                </label>
+                                                <button type="button" class="btn btn-outline-success btn-lg rounded-pill" id="signatureCameraBtn">
+                                                    <i class="fas fa-camera me-2"></i>Capture Signature
+                                                </button>
+                                            </div>
+                                            
+                                            <input 
+                                                type="file" 
+                                                id="signatureInput" 
+                                                name="signature"
+                                                accept="image/jpeg,image/jpg,image/png"
+                                                hidden
+                                                required
+                                            >
+                                            <p class="text-muted small mb-0">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Signature image (JPG/PNG, Max 500KB)
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Signature Camera Capture Area -->
+                                        <div class="camera-area d-none" id="signatureCameraArea">
+                                            <video id="signatureCameraVideo" autoplay playsinline class="w-100 rounded-3 mb-3"></video>
+                                            <canvas id="signatureCameraCanvas" class="d-none"></canvas>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-success btn-lg rounded-pill" id="signatureCaptureBtn">
+                                                    <i class="fas fa-camera me-2"></i>Capture Signature
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill" id="closeSignatureCameraBtn">
+                                                    <i class="fas fa-times me-2"></i>Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Signature Preview Area -->
+                                        <div class="preview-area d-none" id="signaturePreviewArea">
+                                            <img id="signaturePreview" src="" alt="Signature Preview" class="img-fluid rounded-3 mb-3" style="max-height: 150px;">
+                                            <p class="mb-2 fw-semibold" id="signatureFileName"></p>
+                                            <p class="text-muted small mb-3" id="signatureFileSize"></p>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" id="removeSignature">
+                                                <i class="fas fa-trash me-2"></i>Remove Signature
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

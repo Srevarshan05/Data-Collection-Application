@@ -19,6 +19,9 @@ class Student(Base):
     section = Column(String(1), nullable=False)
     register_number = Column(String(50), unique=True, nullable=False, index=True)
     photo_path = Column(String(500), nullable=False)
+    has_ipad = Column(String(3), nullable=True, default='No')  # 'Yes' or 'No'
+    ipad_mac_address = Column(String(100), nullable=True)
+    signature_path = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self):
@@ -35,5 +38,8 @@ class Student(Base):
             "section": self.section,
             "register_number": self.register_number,
             "photo_path": self.photo_path,
+            "has_ipad": self.has_ipad,
+            "ipad_mac_address": self.ipad_mac_address,
+            "signature_path": self.signature_path,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
