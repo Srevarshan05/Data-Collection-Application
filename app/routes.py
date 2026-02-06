@@ -20,6 +20,7 @@ from app.utils import (
     process_and_save_image,
     get_file_size,
     generate_csv_report,
+    generate_excel_report_with_photos,
     get_weekly_registrations,
     get_year_wise_count,
     get_section_wise_count,
@@ -228,7 +229,7 @@ async def get_all_students(db: Session = Depends(get_db)):
 @router.get("/api/download-report")
 async def download_report(db: Session = Depends(get_db)):
     """
-    Download CSV report of all students
+    Download Excel report of all students with photos
     """
     # Get all students
     students = db.query(Student).order_by(Student.created_at.desc()).all()
@@ -240,14 +241,14 @@ async def download_report(db: Session = Depends(get_db)):
             detail="No student data available to generate report"
         )
     
-    # Generate CSV report
+    # Generate Excel report with photos
     try:
-        filepath = generate_csv_report(students_data)
+        filepath = generate_excel_report_with_photos(students_data)
         
         return FileResponse(
             path=filepath,
             filename=os.path.basename(filepath),
-            media_type='text/csv'
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
         raise HTTPException(
@@ -259,7 +260,7 @@ async def download_report(db: Session = Depends(get_db)):
 @router.get("/api/download-weekly-report")
 async def download_weekly_report(db: Session = Depends(get_db)):
     """
-    Download CSV report of students registered in the last 7 days
+    Download Excel report of students registered in the last 7 days with photos
     """
     # Get all students
     students = db.query(Student).order_by(Student.created_at.desc()).all()
@@ -274,17 +275,17 @@ async def download_weekly_report(db: Session = Depends(get_db)):
             detail="No students registered in the last 7 days"
         )
     
-    # Generate CSV report
+    # Generate Excel report with photos
     try:
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"weekly_report_{timestamp}.csv"
-        filepath = generate_csv_report(weekly_students, filename)
+        filename = f"weekly_report_{timestamp}.xlsx"
+        filepath = generate_excel_report_with_photos(weekly_students, filename)
         
         return FileResponse(
             path=filepath,
             filename=os.path.basename(filepath),
-            media_type='text/csv'
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
         raise HTTPException(
@@ -296,7 +297,7 @@ async def download_weekly_report(db: Session = Depends(get_db)):
 @router.get("/api/download-year-report/{year}")
 async def download_year_report(year: int, db: Session = Depends(get_db)):
     """
-    Download CSV report of students from a specific year
+    Download Excel report of students from a specific year with photos
     """
     # Validate year
     if year not in [1, 2, 3]:
@@ -315,17 +316,17 @@ async def download_year_report(year: int, db: Session = Depends(get_db)):
             detail=f"No students found for Year {year}"
         )
     
-    # Generate CSV report
+    # Generate Excel report with photos
     try:
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"year_{year}_report_{timestamp}.csv"
-        filepath = generate_csv_report(students_data, filename)
+        filename = f"year_{year}_report_{timestamp}.xlsx"
+        filepath = generate_excel_report_with_photos(students_data, filename)
         
         return FileResponse(
             path=filepath,
             filename=os.path.basename(filepath),
-            media_type='text/csv'
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
         raise HTTPException(

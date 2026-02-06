@@ -208,6 +208,164 @@ def get_section_wise_count(students_data: list) -> dict:
     return section_count
 
 
+def generate_excel_report_with_photos(students_data: list, filename: str = None) -> str:
+    """
+    Generate Excel report with embedded student photos
+    """
+    try:
+        from openpyxl import Workbook
+        from openpyxl.drawing.image import Image as XLImage
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        raise ImportError("openpyxl is required for Excel generation. Install it with: pip install openpyxl")
+    
+    # Create reports directory if it doesn't exist
+    reports_dir = "reports"
+    os.makedirs(reports_dir, exist_ok=True)
+    
+    # Generate filename if not provided
+    if not filename:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"student_report_{timestamp}.xlsx"
+    
+    # Ensure .xlsx extension
+    if not filename.endswith('.xlsx'):
+        filename = filename.replace('.csv', '.xlsx')
+    
+    filepath = os.path.join(reports_dir, filename)
+    
+    # Create workbook and select active sheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Student Records"
+    
+    # Define headers
+    headers = ['Photo', 'Name', 'Year', 'Section', 'Register Number', 'Registration Date']
+    
+    # Style for headers
+    header_fill = PatternFill(start_color="0066CC", end_color="0066CC", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Border style
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Write headers
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Set column widths
+    ws.column_dimensions['A'].width = 15  # Photo column
+    ws.column_dimensions['B'].width = 25  # Name
+    ws.column_dimensions['C'].width = 10  # Year
+    ws.column_dimensions['D'].width = 10  # Section
+    ws.column_dimensions['E'].width = 20  # Register Number
+    ws.column_dimensions['F'].width = 20  # Registration Date
+    
+    # Set row height for header
+    ws.row_dimensions[1].height = 25
+    
+    # Add student data
+    for idx, student in enumerate(students_data, start=2):
+        # Set row height for photo (80 pixels = approximately 60 points)
+        ws.row_dimensions[idx].height = 80
+        
+        # Add photo if exists
+        photo_path = student.get('photo_path', '')
+        if photo_path and os.path.exists(photo_path):
+            try:
+                # Create a copy of the image for Excel (resize to fit cell)
+                img = Image.open(photo_path)
+                
+                # Resize image to fit in cell (100x100 pixels)
+                img_resized = img.resize((100, 100), Image.Resampling.LANCZOS)
+                
+                # Save temporary resized image
+                temp_img_path = os.path.join(reports_dir, f"temp_{student.get('register_number', idx)}.jpg")
+                img_resized.save(temp_img_path, 'JPEG', quality=85)
+                
+                # Add image to Excel
+                xl_img = XLImage(temp_img_path)
+                xl_img.width = 100
+                xl_img.height = 100
+                
+                # Position image in cell A (Photo column)
+                cell_ref = f'A{idx}'
+                ws.add_image(xl_img, cell_ref)
+                
+                # Clean up temporary image
+                try:
+                    os.remove(temp_img_path)
+                except:
+                    pass
+                    
+            except Exception as e:
+                # If image fails, write "No Photo"
+                cell = ws.cell(row=idx, column=1)
+                cell.value = "Error loading photo"
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+        else:
+            cell = ws.cell(row=idx, column=1)
+            cell.value = "No Photo"
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Add other student data
+        # Name
+        cell = ws.cell(row=idx, column=2)
+        cell.value = student.get('name', '')
+        cell.alignment = Alignment(vertical="center")
+        cell.border = thin_border
+        
+        # Year
+        cell = ws.cell(row=idx, column=3)
+        cell.value = student.get('year', '')
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+        
+        # Section
+        cell = ws.cell(row=idx, column=4)
+        cell.value = student.get('section', '')
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+        
+        # Register Number
+        cell = ws.cell(row=idx, column=5)
+        cell.value = student.get('register_number', '')
+        cell.alignment = Alignment(vertical="center")
+        cell.border = thin_border
+        
+        # Registration Date
+        cell = ws.cell(row=idx, column=6)
+        created_at = student.get('created_at', '')
+        if created_at:
+            if isinstance(created_at, str):
+                try:
+                    dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    cell.value = dt.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    cell.value = created_at
+            else:
+                cell.value = created_at.strftime('%Y-%m-%d %H:%M:%S')
+        cell.alignment = Alignment(vertical="center")
+        cell.border = thin_border
+    
+    # Save workbook
+    wb.save(filepath)
+    
+    return filepath
+
+
 def format_file_size(size_bytes: int) -> str:
     """
     Format file size in human-readable format
