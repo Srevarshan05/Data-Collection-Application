@@ -1,7 +1,7 @@
 @echo off
 echo ============================================================
 echo AIML Student Registration ^& Data Management System
-echo Setup and Run Script
+echo Setup and Run Script (With Database Reset Option)
 echo ============================================================
 echo.
 
@@ -14,12 +14,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/8] Checking Python installation...
+echo [1/9] Checking Python installation...
 python --version
 echo.
 
 REM Check if PostgreSQL is running
-echo [2/8] Checking PostgreSQL...
+echo [2/9] Checking PostgreSQL...
 echo Please ensure PostgreSQL is running on port 5432
 echo Database name: college_registration
 echo Password: 123456
@@ -28,7 +28,7 @@ timeout /t 3 >nul
 
 REM Create .env file if it doesn't exist
 if not exist ".env" (
-    echo [3/8] Creating .env configuration file...
+    echo [3/9] Creating .env configuration file...
     (
         echo DATABASE_URL=postgresql://postgres:123456@localhost:5432/college_registration
         echo APP_HOST=0.0.0.0
@@ -41,32 +41,32 @@ if not exist ".env" (
     ) > .env
     echo .env file created successfully!
 ) else (
-    echo [3/8] .env file already exists
+    echo [3/9] .env file already exists
 )
 echo.
 
 REM Check if virtual environment exists
 if not exist "venv" (
-    echo [4/8] Creating virtual environment...
+    echo [4/9] Creating virtual environment...
     python -m venv venv
     echo Virtual environment created successfully!
 ) else (
-    echo [4/8] Virtual environment already exists
+    echo [4/9] Virtual environment already exists
 )
 echo.
 
 REM Activate virtual environment
-echo [5/8] Activating virtual environment...
+echo [5/9] Activating virtual environment...
 call venv\Scripts\activate.bat
 echo.
 
 REM Install dependencies
-echo [6/8] Installing dependencies...
+echo [6/9] Installing dependencies...
 pip install -r requirements.txt
 echo.
 
 REM Create necessary directories
-echo [7/8] Creating necessary directories...
+echo [7/9] Creating necessary directories...
 if not exist "uploads" mkdir uploads
 if not exist "reports" mkdir reports
 if not exist "reports\temp" mkdir reports\temp
@@ -75,16 +75,36 @@ if not exist "app\static\js" mkdir app\static\js
 echo Directories created successfully!
 echo.
 
-REM Initialize database
-echo [8/8] Initializing database...
-python init_db.py
+REM Ask about database reset
+echo [8/9] Database Setup...
 echo.
+echo IMPORTANT: This application has been updated with new features:
+echo   - iPad ownership tracking
+echo   - iPad MAC address field
+echo   - Signature upload with camera capture
+echo.
+echo If you're running this for the FIRST TIME or after updating,
+echo you need to reset the database to include new fields.
+echo.
+set /p RESET_DB="Do you want to RESET the database? (This will delete all existing data) [Y/N]: "
 
-echo ============================================================
-echo IMPORTANT NOTE:
-echo If you updated the application and see database errors,
-echo run: setup_and_run_with_reset.bat (includes database reset)
-echo ============================================================
+if /i "%RESET_DB%"=="Y" (
+    echo.
+    echo Resetting database with new schema...
+    python reset_db_auto.py
+    echo.
+    echo Database reset complete!
+    echo.
+) else (
+    echo.
+    echo Skipping database reset. Using existing database...
+    echo If you encounter errors, run: python reset_db_auto.py
+    echo.
+)
+
+REM Initialize database (creates tables if they don't exist)
+echo [9/9] Ensuring database tables exist...
+python init_db.py
 echo.
 
 echo ============================================================
@@ -99,9 +119,9 @@ echo   - Host: localhost:5432
 echo   - Database: college_registration
 echo   - Password: 123456
 echo.
-echo NEW FEATURES:
+echo NEW FEATURES AVAILABLE:
 echo   - iPad ownership tracking
-echo   - iPad MAC address field
+echo   - iPad MAC address field (conditional)
 echo   - Signature upload with camera capture
 echo   - Updated admin dashboard labels
 echo.
