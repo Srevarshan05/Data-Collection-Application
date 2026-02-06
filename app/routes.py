@@ -55,10 +55,72 @@ async def success_page(request: Request, register_number: str = ""):
 
 
 @router.get("/admin", response_class=HTMLResponse)
-async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+async def admin_dashboard(request: Request, db: Session = Depends(get_db), password: str = None):
     """
-    Render admin dashboard with analytics
+    Render admin dashboard with analytics (password protected)
     """
+    # Simple password protection
+    ADMIN_PASSWORD = "admin123"  # Change this to your desired password
+    
+    # Check if password is provided and correct
+    if password != ADMIN_PASSWORD:
+        # Return password prompt page
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Admin Login - AIML System</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+        </head>
+        <body class="bg-light">
+            <div class="container">
+                <div class="row min-vh-100 align-items-center justify-content-center">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card shadow-lg border-0 rounded-4">
+                            <div class="card-body p-5">
+                                <div class="text-center mb-4">
+                                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                                    <h3 class="mb-2">Admin Access</h3>
+                                    <p class="text-muted">Enter password to continue</p>
+                                </div>
+                                <form method="GET" action="/admin">
+                                    <div class="mb-4">
+                                        <label for="password" class="form-label fw-semibold">Password</label>
+                                        <input 
+                                            type="password" 
+                                            class="form-control form-control-lg rounded-pill" 
+                                            id="password" 
+                                            name="password"
+                                            placeholder="Enter admin password"
+                                            required
+                                            autofocus
+                                        >
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                                            <i class="fas fa-sign-in-alt me-2"></i>Access Dashboard
+                                        </button>
+                                        <a href="/" class="btn btn-outline-secondary btn-lg rounded-pill">
+                                            <i class="fas fa-arrow-left me-2"></i>Back to Registration
+                                        </a>
+                                    </div>
+                                </form>
+                                <div class="alert alert-info mt-4 mb-0" role="alert">
+                                    <small><i class="fas fa-info-circle me-2"></i>Default password: admin123</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """)
+    
+    # Password is correct, show dashboard
     # Get all students
     students = db.query(Student).all()
     students_data = [student.to_dict() for student in students]
@@ -332,6 +394,58 @@ async def download_year_report(year: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=500,
             detail=f"Error generating Year {year} report: {str(e)}"
+        )
+
+
+@router.get("/api/download-section-report/{year}/{section}")
+async def download_section_report(year: int, section: str, db: Session = Depends(get_db)):
+    """
+    Download Excel report of students from a specific year and section with photos
+    """
+    # Validate year
+    if year not in [1, 2, 3]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid year. Must be 1, 2, or 3"
+        )
+    
+    # Validate section
+    section = section.upper()
+    if not validate_year_section(year, section):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid section '{section}' for Year {year}"
+        )
+    
+    # Get students from specific year and section
+    students = db.query(Student).filter(
+        Student.year == year,
+        Student.section == section
+    ).order_by(Student.created_at.desc()).all()
+    students_data = [student.to_dict() for student in students]
+    
+    if not students_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No students found for Year {year} Section {section}"
+        )
+    
+    # Generate Excel report with photos
+    try:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"year_{year}_section_{section}_report_{timestamp}.xlsx"
+        filepath = generate_excel_report_with_photos(students_data, filename)
+        
+        return FileResponse(
+            path=filepath,
+            filename=os.path.basename(filepath),
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating Year {year} Section {section} report: {str(e)}"
         )
 
 
