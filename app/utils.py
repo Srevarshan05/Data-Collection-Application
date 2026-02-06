@@ -285,18 +285,19 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
         photo_path = student.get('photo_path', '')
         if photo_path and os.path.exists(photo_path):
             try:
-                # Create a copy of the image for Excel (resize to fit cell)
+                # Open and resize image directly for Excel
                 img = Image.open(photo_path)
                 
                 # Resize image to fit in cell (100x100 pixels)
                 img_resized = img.resize((100, 100), Image.Resampling.LANCZOS)
                 
-                # Save temporary resized image with absolute path
-                temp_filename = f"temp_{student.get('register_number', idx)}.jpg"
-                temp_img_path = os.path.abspath(os.path.join(reports_dir, temp_filename))
+                # Create temp directory if it doesn't exist
+                temp_dir = os.path.join(os.getcwd(), "reports", "temp")
+                os.makedirs(temp_dir, exist_ok=True)
                 
-                # Ensure the directory exists
-                os.makedirs(os.path.dirname(temp_img_path), exist_ok=True)
+                # Save temporary resized image with simple filename
+                temp_filename = f"img_{idx}.jpg"
+                temp_img_path = os.path.join(temp_dir, temp_filename)
                 
                 # Save the resized image
                 img_resized.save(temp_img_path, 'JPEG', quality=85)
@@ -309,19 +310,11 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
                 # Position image in cell A (Photo column)
                 cell_ref = f'A{idx}'
                 ws.add_image(xl_img, cell_ref)
-                
-                # Clean up temporary image after adding to Excel
-                try:
-                    if os.path.exists(temp_img_path):
-                        os.remove(temp_img_path)
-                except Exception as cleanup_error:
-                    # If cleanup fails, just continue - file will be overwritten next time
-                    pass
                     
             except Exception as e:
                 # If image fails, write error message
                 cell = ws.cell(row=idx, column=1)
-                cell.value = f"Error: {str(e)[:20]}"
+                cell.value = "Photo Error"
                 cell.alignment = Alignment(horizontal="center", vertical="center")
         else:
             cell = ws.cell(row=idx, column=1)
@@ -370,6 +363,19 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
     
     # Save workbook
     wb.save(filepath)
+    
+    # Clean up all temporary images after saving Excel
+    try:
+        temp_dir = os.path.join(os.getcwd(), "reports", "temp")
+        if os.path.exists(temp_dir):
+            for file in os.listdir(temp_dir):
+                if file.startswith("img_") and file.endswith(".jpg"):
+                    try:
+                        os.remove(os.path.join(temp_dir, file))
+                    except:
+                        pass
+    except:
+        pass
     
     return filepath
 
