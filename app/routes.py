@@ -293,6 +293,47 @@ async def download_weekly_report(db: Session = Depends(get_db)):
         )
 
 
+@router.get("/api/download-year-report/{year}")
+async def download_year_report(year: int, db: Session = Depends(get_db)):
+    """
+    Download CSV report of students from a specific year
+    """
+    # Validate year
+    if year not in [1, 2, 3]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid year. Must be 1, 2, or 3"
+        )
+    
+    # Get students from specific year
+    students = db.query(Student).filter(Student.year == year).order_by(Student.created_at.desc()).all()
+    students_data = [student.to_dict() for student in students]
+    
+    if not students_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No students found for Year {year}"
+        )
+    
+    # Generate CSV report
+    try:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"year_{year}_report_{timestamp}.csv"
+        filepath = generate_csv_report(students_data, filename)
+        
+        return FileResponse(
+            path=filepath,
+            filename=os.path.basename(filepath),
+            media_type='text/csv'
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating Year {year} report: {str(e)}"
+        )
+
+
 @router.get("/api/stats")
 async def get_statistics(db: Session = Depends(get_db)):
     """
