@@ -291,8 +291,14 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
                 # Resize image to fit in cell (100x100 pixels)
                 img_resized = img.resize((100, 100), Image.Resampling.LANCZOS)
                 
-                # Save temporary resized image
-                temp_img_path = os.path.join(reports_dir, f"temp_{student.get('register_number', idx)}.jpg")
+                # Save temporary resized image with absolute path
+                temp_filename = f"temp_{student.get('register_number', idx)}.jpg"
+                temp_img_path = os.path.abspath(os.path.join(reports_dir, temp_filename))
+                
+                # Ensure the directory exists
+                os.makedirs(os.path.dirname(temp_img_path), exist_ok=True)
+                
+                # Save the resized image
                 img_resized.save(temp_img_path, 'JPEG', quality=85)
                 
                 # Add image to Excel
@@ -304,16 +310,18 @@ def generate_excel_report_with_photos(students_data: list, filename: str = None)
                 cell_ref = f'A{idx}'
                 ws.add_image(xl_img, cell_ref)
                 
-                # Clean up temporary image
+                # Clean up temporary image after adding to Excel
                 try:
-                    os.remove(temp_img_path)
-                except:
+                    if os.path.exists(temp_img_path):
+                        os.remove(temp_img_path)
+                except Exception as cleanup_error:
+                    # If cleanup fails, just continue - file will be overwritten next time
                     pass
                     
             except Exception as e:
-                # If image fails, write "No Photo"
+                # If image fails, write error message
                 cell = ws.cell(row=idx, column=1)
-                cell.value = "Error loading photo"
+                cell.value = f"Error: {str(e)[:20]}"
                 cell.alignment = Alignment(horizontal="center", vertical="center")
         else:
             cell = ws.cell(row=idx, column=1)
