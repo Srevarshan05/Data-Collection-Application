@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration - College Data Collection</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Header -->
+            <div class="col-12 bg-primary text-white py-3 mb-4">
+                <div class="container">
+                    <h2 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>College Data Collection System</h2>
+                    <p class="mb-0 small">Student Registration Portal</p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-12">
+                <div class="container">
+                    <div class="row g-4">
+                        <!-- Left Side - Student Details Form -->
+                        <div class="col-lg-7">
+                            <div class="card shadow-sm border-0 rounded-3">
+                                <div class="card-body p-4">
+                                    <h4 class="card-title mb-4 text-primary">
+                                        <i class="fas fa-user-graduate me-2"></i>Student Details
+                                    </h4>
+                                    
+                                    <form id="registrationForm" enctype="multipart/form-data">
+                                        <!-- Student Full Name -->
+                                        <div class="mb-4">
+                                            <label for="studentName" class="form-label fw-semibold">
+                                                Student Full Name <span class="text-danger">*</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                class="form-control form-control-lg rounded-pill" 
+                                                id="studentName" 
+                                                name="name"
+                                                placeholder="Enter full name"
+                                                required
+                                            >
+                                            <div class="invalid-feedback">Please enter student name</div>
+                                        </div>
+
+                                        <!-- Year of Study -->
+                                        <div class="mb-4">
+                                            <label for="yearOfStudy" class="form-label fw-semibold">
+                                                Year of Study <span class="text-danger">*</span>
+                                            </label>
+                                            <select 
+                                                class="form-select form-select-lg rounded-pill" 
+                                                id="yearOfStudy" 
+                                                name="year"
+                                                required
+                                            >
+                                                <option value="" selected disabled>Select Year</option>
+                                                <option value="1">Year 1</option>
+                                                <option value="2">Year 2</option>
+                                                <option value="3">Year 3</option>
+                                            </select>
+                                            <div class="invalid-feedback">Please select year of study</div>
+                                        </div>
+
+                                        <!-- Section Allocation -->
+                                        <div class="mb-4">
+                                            <label for="sectionAllocation" class="form-label fw-semibold">
+                                                Section Allocation <span class="text-danger">*</span>
+                                            </label>
+                                            <select 
+                                                class="form-select form-select-lg rounded-pill" 
+                                                id="sectionAllocation" 
+                                                name="section"
+                                                required
+                                                disabled
+                                            >
+                                                <option value="" selected disabled>Select Section</option>
+                                            </select>
+                                            <div class="invalid-feedback">Please select section</div>
+                                            <small class="text-muted">Please select year first</small>
+                                        </div>
+
+                                        <!-- Registration Number -->
+                                        <div class="mb-4">
+                                            <label for="registrationNumber" class="form-label fw-semibold">
+                                                Registration Number <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light border-end-0 rounded-start-pill" id="regPrefix">
+                                                    Select Year
+                                                </span>
+                                                <input 
+                                                    type="text" 
+                                                    class="form-control border-start-0 rounded-end-pill" 
+                                                    id="registrationNumber" 
+                                                    name="last_digits"
+                                                    placeholder="XXX"
+                                                    maxlength="3"
+                                                    pattern="\d{3}"
+                                                    required
+                                                    disabled
+                                                >
+                                                <div class="invalid-feedback">Enter exactly 3 digits</div>
+                                            </div>
+                                            <small class="text-muted">Enter last 3 digits only</small>
+                                        </div>
+
+                                        <!-- Hidden field for full registration number -->
+                                        <input type="hidden" id="fullRegNumber" name="full_register_number">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side - Photo Upload -->
+                        <div class="col-lg-5">
+                            <div class="card shadow-sm border-0 rounded-3">
+                                <div class="card-body p-4">
+                                    <h4 class="card-title mb-4 text-primary">
+                                        <i class="fas fa-camera me-2"></i>Photo Upload
+                                    </h4>
+                                    
+                                    <!-- Upload Area -->
+                                    <div class="upload-area" id="uploadArea">
+                                        <div class="upload-content" id="uploadContent">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                            <h5 class="mb-2">Drag & Drop Photo Here</h5>
+                                            <p class="text-muted mb-3">or</p>
+                                            <label for="photoInput" class="btn btn-outline-primary btn-lg rounded-pill">
+                                                <i class="fas fa-folder-open me-2"></i>Browse Files
+                                            </label>
+                                            <input 
+                                                type="file" 
+                                                id="photoInput" 
+                                                name="photo"
+                                                accept="image/jpeg,image/jpg,image/png"
+                                                hidden
+                                                required
+                                            >
+                                            <p class="text-muted small mt-3 mb-0">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Passport size photo (JPG/PNG, Max 500KB)
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Preview Area -->
+                                        <div class="preview-area d-none" id="previewArea">
+                                            <img id="imagePreview" src="" alt="Preview" class="img-fluid rounded-3 mb-3">
+                                            <p class="mb-2 fw-semibold" id="fileName"></p>
+                                            <p class="text-muted small mb-3" id="fileSize"></p>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" id="removeImage">
+                                                <i class="fas fa-trash me-2"></i>Remove Photo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-4 mb-5">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-end gap-3">
+                                <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill px-5" id="resetBtn">
+                                    <i class="fas fa-redo me-2"></i>Reset
+                                </button>
+                                <button type="submit" form="registrationForm" class="btn btn-primary btn-lg rounded-pill px-5" id="submitBtn">
+                                    <i class="fas fa-id-card me-2"></i>Generate ID
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Link -->
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <a href="/admin" class="text-decoration-none">
+                                <i class="fas fa-user-shield me-2"></i>Admin Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner Modal -->
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="mb-2">Processing Registration...</h5>
+                    <p class="text-muted mb-0">Please wait while we save your details</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
