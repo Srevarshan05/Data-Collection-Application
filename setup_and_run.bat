@@ -91,8 +91,8 @@ echo ============================================================
 echo Starting the application...
 echo.
 echo Access URLs:
-echo   - Registration: http://localhost:8002
-echo   - Admin Dashboard: http://localhost:8002/admin?password=admin123
+echo   - Local: http://localhost:8002
+echo   - Admin: http://localhost:8002/admin?password=admin123
 echo.
 echo Database Configuration:
 echo   - Host: localhost:5432
@@ -105,11 +105,53 @@ echo   - iPad MAC address field
 echo   - Signature upload with camera capture
 echo   - Updated admin dashboard labels
 echo.
-echo Press Ctrl+C to stop the server
 echo ============================================================
 echo.
 
-REM Run the application
-uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+REM Start the application in a new window
+start "FastAPI Server" cmd /k "venv\Scripts\activate && uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload"
 
+REM Wait for server to start
+echo Waiting for server to start...
+timeout /t 5 /nobreak >nul
+
+REM Check if ngrok is installed
+where ngrok >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo [WARNING] Ngrok is not installed or not in PATH
+    echo Please install ngrok from: https://ngrok.com/download
+    echo.
+    echo Application is running locally at: http://localhost:8002
+    echo.
+    pause
+    exit /b 0
+)
+
+REM Start ngrok tunnel
+echo.
+echo Starting Ngrok tunnel on port 8002...
+echo.
+start "Ngrok Tunnel" cmd /k "ngrok http 8002"
+
+echo.
+echo ============================================================
+echo APPLICATION STARTED SUCCESSFULLY!
+echo ============================================================
+echo.
+echo Local Access:
+echo   - http://localhost:8002
+echo   - http://localhost:8002/admin?password=admin123
+echo.
+echo Public Access:
+echo   - Check the Ngrok window for your public URL
+echo   - It will look like: https://xxxx-xx-xx-xx-xx.ngrok-free.app
+echo.
+echo Both windows will remain open:
+echo   1. FastAPI Server (running the application)
+echo   2. Ngrok Tunnel (providing public URL)
+echo.
+echo To stop: Close both windows or press Ctrl+C in each
+echo ============================================================
+echo.
 pause
