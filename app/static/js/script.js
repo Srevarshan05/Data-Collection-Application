@@ -256,11 +256,21 @@ retakeBtn.addEventListener('click', () => {
 
 // Open camera
 cameraBtn.addEventListener('click', async () => {
+    await startCamera(currentFacingMode);
+});
+
+// Function to start camera with specified facing mode
+async function startCamera(facingMode) {
     try {
-        // Request camera access
+        // Stop existing stream if any
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Request camera access with specified facing mode
         cameraStream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
-                facingMode: 'user',
+                facingMode: facingMode,
                 width: { ideal: 640 },
                 height: { ideal: 480 }
             } 
@@ -273,7 +283,8 @@ cameraBtn.addEventListener('click', async () => {
         uploadContent.classList.add('d-none');
         cameraArea.classList.remove('d-none');
         
-        showToast('info', 'Camera ready! Position yourself and click "Take Photo"');
+        const cameraType = facingMode === 'user' ? 'Front' : 'Rear';
+        showToast('info', `${cameraType} camera ready! Position yourself and click "Take Photo"`);
     } catch (error) {
         console.error('Error accessing camera:', error);
         
@@ -282,13 +293,40 @@ cameraBtn.addEventListener('click', async () => {
             errorMessage += 'Please allow camera access in your browser settings.';
         } else if (error.name === 'NotFoundError') {
             errorMessage += 'No camera found on this device.';
+        } else if (error.name === 'OverconstrainedError') {
+            errorMessage += 'Requested camera not available. Trying default camera...';
+            // Try with default camera
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                cameraVideo.srcObject = cameraStream;
+                uploadContent.classList.add('d-none');
+                cameraArea.classList.remove('d-none');
+                showToast('info', 'Camera ready! Position yourself and click "Take Photo"');
+                return;
+            } catch (fallbackError) {
+                errorMessage = 'Unable to access any camera.';
+            }
         } else {
             errorMessage += 'Please check your camera permissions.';
         }
         
         showToast('error', errorMessage);
     }
-});
+}
+
+// Switch camera button handler
+if (switchCameraBtn) {
+    switchCameraBtn.addEventListener('click', async () => {
+        // Toggle facing mode
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        await startCamera(currentFacingMode);
+    });
+}
 
 // Capture photo
 captureBtn.addEventListener('click', () => {
@@ -500,11 +538,21 @@ const switchSignatureCameraBtn = document.getElementById('switchSignatureCameraB
 
 // Open signature camera
 signatureCameraBtn.addEventListener('click', async () => {
+    await startSignatureCamera(currentSignatureFacingMode);
+});
+
+// Function to start signature camera with specified facing mode
+async function startSignatureCamera(facingMode) {
     try {
-        // Request camera access
+        // Stop existing stream if any
+        if (signatureCameraStream) {
+            signatureCameraStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Request camera access with specified facing mode
         signatureCameraStream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
-                facingMode: 'user',
+                facingMode: facingMode,
                 width: { ideal: 640 },
                 height: { ideal: 480 }
             } 
@@ -517,7 +565,8 @@ signatureCameraBtn.addEventListener('click', async () => {
         signatureUploadContent.classList.add('d-none');
         signatureCameraArea.classList.remove('d-none');
         
-        showToast('info', 'Camera ready! Position your signature and click "Capture Signature"');
+        const cameraType = facingMode === 'user' ? 'Front' : 'Rear';
+        showToast('info', `${cameraType} camera ready! Position your signature and click "Capture Signature"`);
     } catch (error) {
         console.error('Error accessing camera for signature:', error);
         
@@ -526,13 +575,40 @@ signatureCameraBtn.addEventListener('click', async () => {
             errorMessage += 'Please allow camera access in your browser settings.';
         } else if (error.name === 'NotFoundError') {
             errorMessage += 'No camera found on this device.';
+        } else if (error.name === 'OverconstrainedError') {
+            errorMessage += 'Requested camera not available. Trying default camera...';
+            // Try with default camera
+            try {
+                signatureCameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                signatureCameraVideo.srcObject = signatureCameraStream;
+                signatureUploadContent.classList.add('d-none');
+                signatureCameraArea.classList.remove('d-none');
+                showToast('info', 'Camera ready! Position your signature and click "Capture Signature"');
+                return;
+            } catch (fallbackError) {
+                errorMessage = 'Unable to access any camera.';
+            }
         } else {
             errorMessage += 'Please check your camera permissions.';
         }
         
         showToast('error', errorMessage);
     }
-});
+}
+
+// Switch signature camera button handler
+if (switchSignatureCameraBtn) {
+    switchSignatureCameraBtn.addEventListener('click', async () => {
+        // Toggle facing mode
+        currentSignatureFacingMode = currentSignatureFacingMode === 'user' ? 'environment' : 'user';
+        await startSignatureCamera(currentSignatureFacingMode);
+    });
+}
 
 // Capture signature
 signatureCaptureBtn.addEventListener('click', () => {

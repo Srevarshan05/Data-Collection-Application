@@ -108,9 +108,6 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db), passw
                                         </a>
                                     </div>
                                 </form>
-                                <div class="alert alert-info mt-4 mb-0" role="alert">
-                                    <small><i class="fas fa-info-circle me-2"></i>Default password: admin123</small>
-                                </div>
                             </div>
                         </div>
                     </div>
