@@ -97,6 +97,18 @@ body {
     width: 100%;
 }
 
+/* Camera Area */
+.camera-area {
+    text-align: center;
+}
+
+.camera-area video {
+    max-width: 100%;
+    border: 3px solid #e9ecef;
+    box-shadow: var(--box-shadow);
+    background-color: #000;
+}
+
 /* Preview Area */
 .preview-area {
     text-align: center;
@@ -140,6 +152,17 @@ body {
 
 .btn-success:hover {
     background: linear-gradient(135deg, #146c43 0%, #0f5132 100%);
+}
+
+.btn-outline-success {
+    border: 2px solid #198754;
+    color: #198754;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
 }
 
 /* Input Group Styles */

@@ -136,10 +136,18 @@
                                         <div class="upload-content" id="uploadContent">
                                             <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
                                             <h5 class="mb-2">Drag & Drop Photo Here</h5>
-                                            <p class="text-muted mb-3">or</p>
-                                            <label for="photoInput" class="btn btn-outline-primary btn-lg rounded-pill">
-                                                <i class="fas fa-folder-open me-2"></i>Browse Files
-                                            </label>
+                                            <p class="text-muted mb-3">or choose an option below</p>
+                                            
+                                            <!-- Upload and Camera Buttons -->
+                                            <div class="d-flex gap-2 justify-content-center mb-3">
+                                                <label for="photoInput" class="btn btn-outline-primary btn-lg rounded-pill">
+                                                    <i class="fas fa-folder-open me-2"></i>Browse Files
+                                                </label>
+                                                <button type="button" class="btn btn-outline-success btn-lg rounded-pill" id="cameraBtn">
+                                                    <i class="fas fa-camera me-2"></i>Capture Photo
+                                                </button>
+                                            </div>
+                                            
                                             <input 
                                                 type="file" 
                                                 id="photoInput" 
@@ -148,10 +156,24 @@
                                                 hidden
                                                 required
                                             >
-                                            <p class="text-muted small mt-3 mb-0">
+                                            <p class="text-muted small mb-0">
                                                 <i class="fas fa-info-circle me-1"></i>
                                                 Passport size photo (JPG/PNG, Max 500KB)
                                             </p>
+                                        </div>
+                                        
+                                        <!-- Camera Capture Area -->
+                                        <div class="camera-area d-none" id="cameraArea">
+                                            <video id="cameraVideo" autoplay playsinline class="w-100 rounded-3 mb-3"></video>
+                                            <canvas id="cameraCanvas" class="d-none"></canvas>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-success btn-lg rounded-pill" id="captureBtn">
+                                                    <i class="fas fa-camera me-2"></i>Take Photo
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill" id="closeCameraBtn">
+                                                    <i class="fas fa-times me-2"></i>Cancel
+                                                </button>
+                                            </div>
                                         </div>
                                         
                                         <!-- Preview Area -->
@@ -159,9 +181,14 @@
                                             <img id="imagePreview" src="" alt="Preview" class="img-fluid rounded-3 mb-3">
                                             <p class="mb-2 fw-semibold" id="fileName"></p>
                                             <p class="text-muted small mb-3" id="fileSize"></p>
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" id="removeImage">
-                                                <i class="fas fa-trash me-2"></i>Remove Photo
-                                            </button>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" id="removeImage">
+                                                    <i class="fas fa-trash me-2"></i>Remove Photo
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" id="retakeBtn">
+                                                    <i class="fas fa-camera me-2"></i>Retake
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

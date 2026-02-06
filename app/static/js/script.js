@@ -32,11 +32,21 @@ const imagePreview = document.getElementById('imagePreview');
 const fileName = document.getElementById('fileName');
 const fileSize = document.getElementById('fileSize');
 const removeImageBtn = document.getElementById('removeImage');
+const retakeBtn = document.getElementById('retakeBtn');
 const registrationForm = document.getElementById('registrationForm');
 const resetBtn = document.getElementById('resetBtn');
 const submitBtn = document.getElementById('submitBtn');
 
+// Camera elements
+const cameraBtn = document.getElementById('cameraBtn');
+const cameraArea = document.getElementById('cameraArea');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraCanvas = document.getElementById('cameraCanvas');
+const captureBtn = document.getElementById('captureBtn');
+const closeCameraBtn = document.getElementById('closeCameraBtn');
+
 let selectedFile = null;
+let cameraStream = null;
 
 // ===================================
 // Year Selection Handler
@@ -214,6 +224,155 @@ removeImageBtn.addEventListener('click', () => {
     previewArea.classList.add('d-none');
 });
 
+// Retake photo
+retakeBtn.addEventListener('click', () => {
+    removeImageBtn.click();
+});
+
+// ===================================
+// Camera Capture Functionality
+// ===================================
+
+// Open camera
+cameraBtn.addEventListener('click', async () => {
+    try {
+        // Request camera access
+        cameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        });
+        
+        // Set video source
+        cameraVideo.srcObject = cameraStream;
+        
+        // Show camera area, hide upload content
+        uploadContent.classList.add('d-none');
+        cameraArea.classList.remove('d-none');
+        
+        showToast('info', 'Camera ready! Position yourself and click "Take Photo"');
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        
+        let errorMessage = 'Unable to access camera. ';
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow camera access in your browser settings.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera found on this device.';
+        } else {
+            errorMessage += 'Please check your camera permissions.';
+        }
+        
+        showToast('error', errorMessage);
+    }
+});
+
+// Capture photo
+captureBtn.addEventListener('click', () => {
+    // Set canvas size to match video
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    
+    // Draw video frame to canvas
+    const context = cameraCanvas.getContext('2d');
+    context.drawImage(cameraVideo, 0, 0);
+    
+    // Convert canvas to blob
+    cameraCanvas.toBlob((blob) => {
+        // Create file from blob
+        const timestamp = new Date().getTime();
+        const file = new File([blob], `camera_capture_${timestamp}.jpg`, { 
+            type: 'image/jpeg' 
+        });
+        
+        // Validate file size
+        const maxSize = 500 * 1024; // 500KB
+        if (file.size > maxSize) {
+            showToast('warning', 'Captured image is too large. Compressing...');
+            
+            // Compress image
+            compressImage(cameraCanvas, (compressedBlob) => {
+                const compressedFile = new File([compressedBlob], `camera_capture_${timestamp}.jpg`, { 
+                    type: 'image/jpeg' 
+                });
+                
+                if (compressedFile.size > maxSize) {
+                    showToast('error', 'Unable to compress image below 500KB. Please try again with better lighting.');
+                    return;
+                }
+                
+                processCapture(compressedFile);
+            });
+        } else {
+            processCapture(file);
+        }
+    }, 'image/jpeg', 0.9);
+});
+
+// Process captured photo
+function processCapture(file) {
+    // Store file
+    selectedFile = file;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        imagePreview.src = e.target.result;
+        fileName.textContent = file.name;
+        fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+        
+        // Hide camera area, show preview
+        cameraArea.classList.add('d-none');
+        previewArea.classList.remove('d-none');
+        
+        // Stop camera
+        stopCamera();
+        
+        showToast('success', 'Photo captured successfully!');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Close camera
+closeCameraBtn.addEventListener('click', () => {
+    stopCamera();
+    
+    // Show upload content, hide camera area
+    cameraArea.classList.add('d-none');
+    uploadContent.classList.remove('d-none');
+});
+
+// Stop camera stream
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+        cameraVideo.srcObject = null;
+    }
+}
+
+// Compress image
+function compressImage(canvas, callback) {
+    // Try different quality levels
+    const qualities = [0.7, 0.6, 0.5, 0.4];
+    let qualityIndex = 0;
+    
+    function tryCompress() {
+        canvas.toBlob((blob) => {
+            if (blob.size <= 500 * 1024 || qualityIndex >= qualities.length - 1) {
+                callback(blob);
+            } else {
+                qualityIndex++;
+                tryCompress();
+            }
+        }, 'image/jpeg', qualities[qualityIndex]);
+    }
+    
+    tryCompress();
+}
+
 // ===================================
 // Form Submission
 // ===================================
@@ -293,9 +452,18 @@ resetBtn.addEventListener('click', () => {
         sectionSelect.innerHTML = '<option value="" selected disabled>Select Section</option>';
         regNumberInput.disabled = true;
         
+        // Stop camera if active
+        stopCamera();
+        
         // Reset image
         if (selectedFile) {
             removeImageBtn.click();
+        }
+        
+        // Hide camera area if visible
+        if (!cameraArea.classList.contains('d-none')) {
+            cameraArea.classList.add('d-none');
+            uploadContent.classList.remove('d-none');
         }
         
         // Reset validation classes
