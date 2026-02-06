@@ -160,10 +160,11 @@
                                                 class="form-control form-control-lg rounded-pill" 
                                                 id="ipadMacAddress" 
                                                 name="ipad_mac_address"
-                                                placeholder="Enter MAC Address (e.g., AA:BB:CC:DD:EE:FF)"
+                                                placeholder="AABBCCDDEEFF"
                                                 pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                                                maxlength="17"
                                             >
-                                            <small class="text-muted">Format: XX:XX:XX:XX:XX:XX</small>
+                                            <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Enter 12 characters - colons will be added automatically</small>
                                             <div class="invalid-feedback">Please enter a valid MAC address</div>
                                         </div>
 
@@ -208,7 +209,13 @@
                                                 hidden
                                                 required
                                             >
-                                            <p class="text-muted small mb-0">
+                                            <div class="alert alert-info mb-0 py-2">
+                                                <small>
+                                                    <i class="fas fa-lightbulb me-1"></i>
+                                                    <strong>Tips:</strong> Use good lighting, plain background, face camera directly
+                                                </small>
+                                            </div>
+                                            <p class="text-muted small mb-0 mt-2">
                                                 <i class="fas fa-info-circle me-1"></i>
                                                 Passport size photo (JPG/PNG, Max 500KB)
                                             </p>
@@ -216,9 +223,15 @@
                                         
                                         <!-- Camera Capture Area -->
                                         <div class="camera-area d-none" id="cameraArea">
+                                            <div class="alert alert-warning py-2 mb-2">
+                                                <small><i class="fas fa-sun me-1"></i><strong>Ensure good lighting for best results!</strong></small>
+                                            </div>
                                             <video id="cameraVideo" autoplay playsinline class="w-100 rounded-3 mb-3"></video>
                                             <canvas id="cameraCanvas" class="d-none"></canvas>
-                                            <div class="d-flex gap-2 justify-content-center">
+                                            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                                <button type="button" class="btn btn-info btn-sm rounded-pill" id="switchCameraBtn">
+                                                    <i class="fas fa-sync-alt me-2"></i>Switch Camera
+                                                </button>
                                                 <button type="button" class="btn btn-success btn-lg rounded-pill" id="captureBtn">
                                                     <i class="fas fa-camera me-2"></i>Take Photo
                                                 </button>
@@ -286,9 +299,15 @@
                                         
                                         <!-- Signature Camera Capture Area -->
                                         <div class="camera-area d-none" id="signatureCameraArea">
+                                            <div class="alert alert-warning py-2 mb-2">
+                                                <small><i class="fas fa-sun me-1"></i><strong>Ensure good lighting for best results!</strong></small>
+                                            </div>
                                             <video id="signatureCameraVideo" autoplay playsinline class="w-100 rounded-3 mb-3"></video>
                                             <canvas id="signatureCameraCanvas" class="d-none"></canvas>
-                                            <div class="d-flex gap-2 justify-content-center">
+                                            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                                <button type="button" class="btn btn-info btn-sm rounded-pill" id="switchSignatureCameraBtn">
+                                                    <i class="fas fa-sync-alt me-2"></i>Switch Camera
+                                                </button>
                                                 <button type="button" class="btn btn-success btn-lg rounded-pill" id="signatureCaptureBtn">
                                                     <i class="fas fa-camera me-2"></i>Capture Signature
                                                 </button>

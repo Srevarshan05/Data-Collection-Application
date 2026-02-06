@@ -44,6 +44,7 @@ const cameraVideo = document.getElementById('cameraVideo');
 const cameraCanvas = document.getElementById('cameraCanvas');
 const captureBtn = document.getElementById('captureBtn');
 const closeCameraBtn = document.getElementById('closeCameraBtn');
+const switchCameraBtn = document.getElementById('switchCameraBtn');
 
 // iPad elements
 const ipadYes = document.getElementById('ipadYes');
@@ -64,6 +65,9 @@ const removeSignatureBtn = document.getElementById('removeSignature');
 let selectedFile = null;
 let selectedSignature = null;
 let cameraStream = null;
+let currentFacingMode = 'environment'; // Start with rear camera (better quality)
+let signatureCameraStream = null;
+let currentSignatureFacingMode = 'environment'; // Start with rear camera
 
 // ===================================
 // Year Selection Handler
@@ -492,8 +496,7 @@ const signatureCameraVideo = document.getElementById('signatureCameraVideo');
 const signatureCameraCanvas = document.getElementById('signatureCameraCanvas');
 const signatureCaptureBtn = document.getElementById('signatureCaptureBtn');
 const closeSignatureCameraBtn = document.getElementById('closeSignatureCameraBtn');
-
-let signatureCameraStream = null;
+const switchSignatureCameraBtn = document.getElementById('switchSignatureCameraBtn');
 
 // Open signature camera
 signatureCameraBtn.addEventListener('click', async () => {
